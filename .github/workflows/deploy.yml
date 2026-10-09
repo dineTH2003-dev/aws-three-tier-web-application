@@ -15,6 +15,11 @@ jobs:
   deploy:
     name: Package & Deploy to AWS
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-south-1
+      AWS_DEFAULT_REGION: ap-south-1
 
     steps:
       - name: Checkout Source Code
@@ -29,28 +34,28 @@ jobs:
             backend/package-lock.json
             frontend/package-lock.json
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION || 'ap-south-1' }}
+      - name: Verify AWS Identity & Credentials
+        run: |
+          echo "Verifying AWS STS Caller Identity..."
+          aws sts get-caller-identity
 
       - name: Build Application Packages & Frontend
         env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || format('http://{0}/api/v1', secrets.ALB_DNS_NAME) }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || secrets.VITE_API_BASE_URL || 'http://three-tier-web-dev-alb-1287304608.ap-south-1.elb.amazonaws.com/api/v1' }}
         run: |
           chmod +x scripts/build-artifacts.sh scripts/deploy-artifacts.sh
           ./scripts/build-artifacts.sh
 
       - name: Upload Deployment Bundle to S3 Artifacts
         run: |
-          ARTIFACT_BUCKET="${{ secrets.ARTIFACT_BUCKET_NAME }}"
+          ARTIFACT_BUCKET="${{ vars.ARTIFACT_BUCKET_NAME || secrets.ARTIFACT_BUCKET_NAME || 'three-tier-web-dev-artifacts-20261009105225412900000001' }}"
+          echo "Uploading bundle to S3 bucket: $ARTIFACT_BUCKET"
           aws s3 cp infrastructure/app-bundle.tar.gz "s3://${ARTIFACT_BUCKET}/app-bundle.tar.gz"
 
       - name: Sync Frontend Build to S3 Website
         run: |
-          FRONTEND_BUCKET="${{ secrets.FRONTEND_BUCKET_NAME }}"
+          FRONTEND_BUCKET="${{ vars.FRONTEND_BUCKET_NAME || secrets.FRONTEND_BUCKET_NAME || 'three-tier-web-dev-frontend-20261009105225413600000002' }}"
+          echo "Syncing frontend build to S3 bucket: $FRONTEND_BUCKET"
           aws s3 sync frontend/dist "s3://${FRONTEND_BUCKET}/" --delete
 
       - name: Trigger EC2 ASG Instance Refresh (Zero-Downtime Rollout)
@@ -71,7 +76,7 @@ jobs:
 
       - name: Verify Live Deployment Health
         run: |
-          ALB_HOST="${{ secrets.ALB_DNS_NAME }}"
+          ALB_HOST="${{ vars.ALB_DNS_NAME || secrets.ALB_DNS_NAME || 'three-tier-web-dev-alb-1287304608.ap-south-1.elb.amazonaws.com' }}"
           if [ -n "$ALB_HOST" ]; then
             echo "Polling live ALB readiness endpoint..."
             curl --retry 5 --retry-delay 10 --retry-connrefused -f "http://${ALB_HOST}/health/ready" || echo "Health check will converge shortly."
