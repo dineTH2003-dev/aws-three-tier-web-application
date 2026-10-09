@@ -1,0 +1,120 @@
+name: CI — Test & Validation Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-tests:
+    name: Backend Unit & Integration Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: taskmanager
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Backend Dependencies
+        run: npm --prefix backend ci
+
+      - name: Execute Database Migrations
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: taskmanager
+          DB_USER: postgres
+          DB_PASSWORD: postgrespassword
+          DB_SSL: false
+        run: npm --prefix backend run migrate
+
+      - name: Run Automated Test Suite
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: taskmanager
+          DB_USER: postgres
+          DB_PASSWORD: postgrespassword
+          DB_SSL: false
+          JWT_SECRET: test-super-secret-jwt-key-minimum-32-chars
+          PORT: 3001
+        run: npm --prefix backend test
+
+  frontend-build:
+    name: Frontend Compilation & Asset Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: npm --prefix frontend ci
+
+      - name: Build React Application
+        env:
+          VITE_API_BASE_URL: /api/v1
+        run: npm --prefix frontend run build
+
+      - name: Verify Build Artifacts
+        run: |
+          test -f frontend/dist/index.html || { echo "index.html missing"; exit 1; }
+          test -d frontend/dist/assets || { echo "assets dir missing"; exit 1; }
+          echo "Frontend built successfully with $(ls frontend/dist/assets | wc -l) asset bundles."
+
+  terraform-lint:
+    name: Terraform Validation & Security Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform CLI
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      - name: Verify Terraform Formatting
+        run: terraform -chdir=infrastructure/terraform fmt -check -diff
+
+      - name: Initialize Terraform Providers
+        run: terraform -chdir=infrastructure/terraform init -backend=false
+
+      - name: Validate Terraform Syntax
+        run: terraform -chdir=infrastructure/terraform validate
