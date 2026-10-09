@@ -1,0 +1,29 @@
+aws_profile = "account2"
+aws_region  = "ap-south-1"
+
+project_name = "three-tier-web"
+environment  = "dev"
+
+# REQUIRED: use an AMI with your Node.js application/runtime baked in.
+# Do not use a public AMI ID from another region.
+ami_id = "ami-REPLACE_WITH_VALID_AMI_IN_AP_SOUTH_1"
+
+instance_type = "t3.micro"
+app_port      = 3000
+
+asg_min_size         = 1
+asg_desired_capacity = 1
+asg_max_size         = 2
+
+# Lowest recurring cost: false. If true, a NAT Gateway adds ongoing charges.
+create_nat_gateway = false
+
+db_name                      = "appdb"
+db_username                  = "appadmin"
+db_instance_class            = "db.t3.micro"
+db_allocated_storage         = 20
+db_backup_retention_period   = 1
+db_multi_az                  = false
+
+# Set the password outside this file:
+# export TF_VAR_db_password='use-a-long-unique-secret'
