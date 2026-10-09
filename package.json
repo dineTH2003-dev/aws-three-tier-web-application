@@ -1,0 +1,17 @@
+{
+  "name": "aws-three-tier-web-application",
+  "version": "1.0.0",
+  "description": "AWS Three-Tier Task Management Application (React, Node.js, PostgreSQL)",
+  "scripts": {
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "migrate": "npm --prefix backend run migrate",
+    "test": "npm --prefix backend test",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build"
+  },
+  "keywords": ["aws", "three-tier", "react", "nodejs", "express", "postgresql"],
+  "author": "",
+  "license": "MIT"
+}
