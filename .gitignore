@@ -147,3 +147,12 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Build & Archives
+dist/
+*.tar.gz
+.env
+.env.local
+.env.*.local
+infrastructure/terraform/tfplan
+
