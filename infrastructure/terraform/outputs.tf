@@ -1,0 +1,49 @@
+output "aws_account_id" {
+  value       = data.aws_caller_identity.current.account_id
+  description = "AWS account Terraform is using."
+}
+
+output "region" {
+  value = var.aws_region
+}
+
+output "alb_dns_name" {
+  value       = aws_lb.app.dns_name
+  description = "HTTP endpoint for the API load balancer. Add HTTPS/ACM before production."
+}
+
+output "frontend_cloudfront_domain" {
+  value       = var.enable_cloudfront ? aws_cloudfront_distribution.frontend[0].domain_name : null
+  description = "CloudFront domain for the React frontend."
+}
+
+output "frontend_website_url" {
+  value       = "http://${aws_s3_bucket_website_configuration.frontend.website_endpoint}"
+  description = "S3 website URL for the React frontend (used when CloudFront is disabled)."
+}
+
+output "frontend_bucket_name" {
+  value       = aws_s3_bucket.frontend.bucket
+  description = "Upload the built frontend files to this bucket."
+}
+
+output "rds_endpoint" {
+  value       = aws_db_instance.postgres.address
+  description = "Private RDS endpoint; reachable only from the application tier."
+}
+
+output "rds_port" {
+  value = aws_db_instance.postgres.port
+}
+
+output "frontend_cloudfront_distribution_id" {
+  value       = var.enable_cloudfront ? aws_cloudfront_distribution.frontend[0].id : null
+  description = "CloudFront distribution ID for cache invalidations."
+}
+
+output "artifact_bucket_name" {
+  value       = aws_s3_bucket.artifacts.bucket
+  description = "Upload application deployment bundles (app-bundle.tar.gz) to this bucket."
+}
+
+
