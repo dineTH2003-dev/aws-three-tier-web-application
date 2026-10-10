@@ -46,4 +46,14 @@ output "artifact_bucket_name" {
   description = "Upload application deployment bundles (app-bundle.tar.gz) to this bucket."
 }
 
+output "ecr_backend_repository_url" {
+  value       = aws_ecr_repository.backend.repository_url
+  description = "Amazon ECR URL for backend container images."
+}
+
+output "ecr_frontend_repository_url" {
+  value       = aws_ecr_repository.frontend.repository_url
+  description = "Amazon ECR URL for frontend container images."
+}
+
 
