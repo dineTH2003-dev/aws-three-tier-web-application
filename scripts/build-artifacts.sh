@@ -7,6 +7,10 @@ STAGE_DIR="/tmp/task-backend-stage"
 BUNDLE_OUTPUT="$REPO_ROOT/infrastructure/app-bundle.tar.gz"
 
 echo "=== 1. Building React Frontend ==="
+if [ ! -d "$REPO_ROOT/frontend/node_modules" ] || [ ! -f "$REPO_ROOT/frontend/node_modules/.bin/vite" ]; then
+  echo "Installing frontend dependencies..."
+  npm --prefix "$REPO_ROOT/frontend" ci --no-audit --no-fund
+fi
 npm --prefix "$REPO_ROOT/frontend" run build
 
 echo "=== 2. Preparing Standalone Node.js Runtime ($NODE_VERSION) ==="
@@ -27,6 +31,9 @@ tar -xzf "$NODE_TARBALL" -C "$STAGE_DIR/node-bin" --strip-components=2 "node-$NO
 
 echo "=== 3. Packaging Backend Application ==="
 cp "$REPO_ROOT/backend/package.json" "$STAGE_DIR/"
+if [ -f "$REPO_ROOT/backend/package-lock.json" ]; then
+  cp "$REPO_ROOT/backend/package-lock.json" "$STAGE_DIR/"
+fi
 cp -r "$REPO_ROOT/backend/src" "$STAGE_DIR/src"
 cp -r "$REPO_ROOT/backend/migrations" "$STAGE_DIR/migrations"
 

@@ -34,6 +34,9 @@ jobs:
             backend/package-lock.json
             frontend/package-lock.json
 
+      - name: Install Frontend Dependencies
+        run: npm --prefix frontend ci --no-audit --no-fund
+
       - name: Verify AWS Identity & Credentials
         run: |
           echo "Verifying AWS STS Caller Identity..."
