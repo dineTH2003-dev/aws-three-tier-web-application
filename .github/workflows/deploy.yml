@@ -61,6 +61,21 @@ jobs:
           echo "Syncing frontend build to S3 bucket: $FRONTEND_BUCKET"
           aws s3 sync frontend/dist "s3://${FRONTEND_BUCKET}/" --delete
 
+      - name: Invalidate CloudFront CDN Cache
+        run: |
+          DIST_ID="${{ vars.CLOUDFRONT_DISTRIBUTION_ID || secrets.CLOUDFRONT_DISTRIBUTION_ID }}"
+          if [ -z "$DIST_ID" ] || [ "$DIST_ID" = "None" ]; then
+            DIST_ID=$(aws cloudfront list-distributions \
+              --query "DistributionList.Items[?Comment=='three-tier-web dev frontend'].Id | [0]" \
+              --output text 2>/dev/null || echo "")
+          fi
+          if [ -n "$DIST_ID" ] && [ "$DIST_ID" != "None" ]; then
+            echo "Creating CloudFront invalidation for distribution: $DIST_ID"
+            aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*"
+          else
+            echo "No active CloudFront distribution found. Skipping invalidation."
+          fi
+
       - name: Trigger EC2 ASG Instance Refresh (Zero-Downtime Rollout)
         run: |
           ASG_NAME="three-tier-web-${{ github.event.inputs.target_environment || 'dev' }}-asg"

@@ -137,4 +137,10 @@ variable "enable_cloudfront" {
   default     = false
 }
 
+variable "cloudfront_price_class" {
+  description = "CloudFront distribution price class (PriceClass_All, PriceClass_200, PriceClass_100)."
+  type        = string
+  default     = "PriceClass_All"
+}
+
 

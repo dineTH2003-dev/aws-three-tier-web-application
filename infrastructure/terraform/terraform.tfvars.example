@@ -25,5 +25,8 @@ db_allocated_storage         = 20
 db_backup_retention_period   = 1
 db_multi_az                  = false
 
+enable_cloudfront            = true
+cloudfront_price_class       = "PriceClass_All"
+
 # Set the password outside this file:
 # export TF_VAR_db_password='use-a-long-unique-secret'

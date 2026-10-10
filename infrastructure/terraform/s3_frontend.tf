@@ -44,7 +44,7 @@ resource "aws_cloudfront_distribution" "frontend" {
   count               = var.enable_cloudfront ? 1 : 0
   enabled             = true
   default_root_object = "index.html"
-  price_class         = "PriceClass_100"
+  price_class         = var.cloudfront_price_class
   comment             = "${var.project_name} ${var.environment} frontend"
 
   origin {
