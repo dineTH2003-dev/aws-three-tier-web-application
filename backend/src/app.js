@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import pinoHttp from 'pino-http';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { config } from './config/env.js';
 import { logger } from './config/logger.js';
 import { requestIdMiddleware } from './middleware/request-id.js';
@@ -10,8 +12,50 @@ import { router } from './routes/index.js';
 
 export const app = express();
 
-// Disable x-powered-by header
+// Trust reverse proxy (ALB / CloudFront) for correct client IP detection in rate limiting
+app.set('trust proxy', 1);
+
+// Disable x-powered-by header and apply secure HTTP response headers via Helmet
 app.disable('x-powered-by');
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
+
+// Rate limiting: general API limiter (disabled during automated test execution)
+const isTest = config.env === 'test';
+
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: isTest ? 10000 : 300,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: {
+    error: {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Too many requests from this IP, please try again after 15 minutes.',
+    },
+  },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: isTest ? 10000 : 25, // Stricter limit on authentication endpoints
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: {
+    error: {
+      code: 'AUTH_RATE_LIMIT_EXCEEDED',
+      message: 'Too many authentication attempts. Please wait 15 minutes before trying again.',
+    },
+  },
+});
+
+// Apply rate limiting
+app.use('/api/', generalLimiter);
+app.use('/api/v1/auth/login', authLimiter);
+app.use('/api/v1/auth/register', authLimiter);
 
 // CORS configuration
 app.use(
