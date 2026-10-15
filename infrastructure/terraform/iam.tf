@@ -25,6 +25,7 @@ resource "aws_iam_instance_profile" "app" {
 
 data "aws_iam_policy_document" "artifacts_read" {
   statement {
+    sid = "AllowS3ArtifactsAndConfigRead"
     actions = [
       "s3:GetObject",
       "s3:ListBucket"
@@ -34,11 +35,34 @@ data "aws_iam_policy_document" "artifacts_read" {
       "${aws_s3_bucket.artifacts.arn}/*"
     ]
   }
+
+  statement {
+    sid = "AllowSSMParameterRead"
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:GetParametersByPath"
+    ]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/*"
+    ]
+  }
+
+  statement {
+    sid = "AllowCloudWatchLogsForwarding"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "logs:DescribeLogStreams"
+    ]
+    resources = ["arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"]
+  }
 }
 
 resource "aws_iam_policy" "artifacts_read" {
   name        = "${var.project_name}-${var.environment}-artifacts-read"
-  description = "Allows EC2 instances to read deployment packages from the artifacts bucket."
+  description = "Allows EC2 instances to read deployment packages and config from S3 and forward logs to CloudWatch."
   policy      = data.aws_iam_policy_document.artifacts_read.json
 }
 
