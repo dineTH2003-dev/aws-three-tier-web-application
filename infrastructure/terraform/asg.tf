@@ -20,15 +20,10 @@ resource "aws_launch_template" "app" {
   user_data = base64encode(templatefile("${path.module}/user_data.sh.tftpl", {
     artifact_bucket   = aws_s3_bucket.artifacts.bucket
     artifact_key      = "app-bundle.tar.gz"
+    config_key        = aws_s3_object.app_config.key
     aws_region        = var.aws_region
     app_port          = var.app_port
     health_check_path = var.health_check_path
-    db_host           = aws_db_instance.postgres.address
-    db_port           = aws_db_instance.postgres.port
-    db_name           = var.db_name
-    db_user           = var.db_username
-    db_password       = var.db_password
-    jwt_secret        = var.jwt_secret
   }))
 
   tag_specifications {
@@ -69,5 +64,20 @@ resource "aws_autoscaling_group" "app" {
     propagate_at_launch = true
   }
 
-  depends_on = [aws_lb_listener.http]
+  depends_on = [aws_lb_listener.http, aws_s3_object.app_config]
+}
+
+# Production Target Tracking Auto-Scaling Policy
+resource "aws_autoscaling_policy" "cpu_tracking" {
+  name                      = "${var.project_name}-${var.environment}-cpu-target-tracking"
+  autoscaling_group_name    = aws_autoscaling_group.app.name
+  policy_type               = "TargetTrackingScaling"
+  estimated_instance_warmup = 180
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 70.0
+  }
 }
