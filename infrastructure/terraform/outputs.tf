@@ -56,4 +56,14 @@ output "ecr_frontend_repository_url" {
   description = "Amazon ECR URL for frontend container images."
 }
 
+output "sns_alerts_topic_arn" {
+  value       = aws_sns_topic.alerts.arn
+  description = "Amazon SNS Topic ARN for operational and reliability alerts."
+}
+
+output "cloudwatch_dashboard_name" {
+  value       = aws_cloudwatch_dashboard.overview.dashboard_name
+  description = "CloudWatch Dashboard name for application and infrastructure health monitoring."
+}
+
 
