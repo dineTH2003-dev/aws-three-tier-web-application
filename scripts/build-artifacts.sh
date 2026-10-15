@@ -36,6 +36,9 @@ if [ -f "$REPO_ROOT/backend/package-lock.json" ]; then
 fi
 cp -r "$REPO_ROOT/backend/src" "$STAGE_DIR/src"
 cp -r "$REPO_ROOT/backend/migrations" "$STAGE_DIR/migrations"
+if [ -d "$REPO_ROOT/backend/certs" ]; then
+  cp -r "$REPO_ROOT/backend/certs" "$STAGE_DIR/certs"
+fi
 
 echo "Installing production node_modules in staging directory..."
 (cd "$STAGE_DIR" && npm install --omit=dev --no-audit --no-fund)

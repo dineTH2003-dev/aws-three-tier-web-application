@@ -24,6 +24,7 @@ resource "aws_launch_template" "app" {
     aws_region        = var.aws_region
     app_port          = var.app_port
     health_check_path = var.health_check_path
+    log_group_name    = aws_cloudwatch_log_group.app.name
   }))
 
   tag_specifications {

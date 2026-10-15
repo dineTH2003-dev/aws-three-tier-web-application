@@ -66,4 +66,12 @@ output "cloudwatch_dashboard_name" {
   description = "CloudWatch Dashboard name for application and infrastructure health monitoring."
 }
 
+output "cloudwatch_log_group_name" {
+  value       = aws_cloudwatch_log_group.app.name
+  description = "CloudWatch Log Group name for centralized application and systemd logs."
+}
 
+output "github_actions_role_arn" {
+  value       = aws_iam_role.github_actions.arn
+  description = "IAM Role ARN for GitHub Actions OIDC assumed authentication."
+}

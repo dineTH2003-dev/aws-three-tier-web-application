@@ -14,6 +14,18 @@ resource "aws_sns_topic" "alerts" {
   }
 }
 
+# Managed CloudWatch Log Group for Application & EC2 Systemd Logs
+resource "aws_cloudwatch_log_group" "app" {
+  name              = "/aws/ec2/${var.project_name}-${var.environment}/app"
+  retention_in_days = 30
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-app-logs"
+    Component   = "monitoring"
+    Environment = var.environment
+  }
+}
+
 # 1. ALB 5XX Error Spike Alarm
 resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
   alarm_name          = "${var.project_name}-${var.environment}-alb-high-5xx"

@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
@@ -8,6 +9,21 @@ const __dirname = path.dirname(__filename);
 // Load .env from backend root or repo root
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+
+function getDbSslConfig() {
+  if (process.env.DB_SSL !== 'true') return false;
+
+  const caPath = path.resolve(__dirname, '../../certs/rds-global-bundle.pem');
+  if (fs.existsSync(caPath)) {
+    return {
+      rejectUnauthorized: true,
+      ca: fs.readFileSync(caPath, 'utf8'),
+    };
+  }
+
+  // Fallback for environments without bundled CA
+  return { rejectUnauthorized: false };
+}
 
 export const config = {
   env: process.env.NODE_ENV || 'development',
@@ -21,7 +37,7 @@ export const config = {
     max: Number.parseInt(process.env.DB_POOL_MAX || '20', 10),
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    ssl: getDbSslConfig(),
   },
   jwt: {
     secret: process.env.JWT_SECRET || 'fallback-dev-secret-change-in-prod-1234567890',

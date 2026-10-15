@@ -32,6 +32,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY package.json ./
 COPY src/ ./src/
 COPY migrations/ ./migrations/
+COPY certs/ ./certs/
 
 # Run as non-privileged user for container security
 USER node
