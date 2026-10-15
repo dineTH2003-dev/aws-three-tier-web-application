@@ -114,8 +114,15 @@ variable "db_allocated_storage" {
 }
 
 variable "db_backup_retention_period" {
-  type    = number
-  default = 1
+  description = "Number of days to retain automated backups (1-35)."
+  type        = number
+  default     = 7
+}
+
+variable "db_deletion_protection" {
+  description = "Prevent the database from being accidentally deleted."
+  type        = bool
+  default     = true
 }
 
 variable "db_multi_az" {

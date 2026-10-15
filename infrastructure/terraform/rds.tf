@@ -23,8 +23,9 @@ resource "aws_db_instance" "postgres" {
   multi_az                        = var.db_multi_az
   backup_retention_period         = var.db_backup_retention_period
   auto_minor_version_upgrade      = true
-  deletion_protection             = false
-  skip_final_snapshot             = true
+  deletion_protection             = var.db_deletion_protection
+  skip_final_snapshot             = false
+  final_snapshot_identifier       = "${var.project_name}-${var.environment}-postgres-final-snapshot"
   apply_immediately               = false
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 
